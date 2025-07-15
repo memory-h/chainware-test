@@ -9,7 +9,6 @@ env:
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
   ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
-  ECS_TASK_DEFINITION: ${{ secrets.ECS_TASK_DEFINITION }}
   CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
   SPRING_DATASOURCE_URL_PROD: ${{ secrets.SPRING_DATASOURCE_URL_PROD }}
   SPRING_DATASOURCE_USERNAME_PROD: ${{ secrets.SPRING_DATASOURCE_USERNAME_PROD }}
@@ -58,16 +57,14 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (ARM64)
         id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: latest
-        run: |
-          docker build -t ${{env.ECR_REPOSITORY}} .
-          docker tag ${{env.ECR_REPOSITORY}}:latest ${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:latest
-          docker push ${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:latest
-          echo "image=${{env.ECR_REGISTRY}}/${{env.ECR_REPOSITORY}}:latest" >> $GITHUB_OUTPUT
+        uses: docker/build-push-action@v5
+        with:
+            context: .
+            platforms: linux/arm64
+            push: true
+            tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
 
       - name: Make .aws directory for task definition
         run: mkdir -p .aws
