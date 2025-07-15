@@ -73,8 +73,12 @@ jobs:
         run: |
           aws s3 cp s3://${{ env.AWS_S3_BUCKET_NAME }}/env/ecs/task-definitions/chainware-spring-task-definition.json .aws/task-definition.json
 
-      - name: Check downloaded task definition
-        run: cat .aws/task-definition.json
+      - name: Check task definition exists
+        run: test -s .aws/task-definition.json
+
+      - name: Set image output
+        id: set-image
+        run: echo "image=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest" >> $GITHUB_OUTPUT
 
       - name: Render new ECS task definition with environment variables
         id: render-task-def
@@ -82,7 +86,7 @@ jobs:
         with:
           task-definition: .aws/task-definition.json
           container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ steps.build-image.outputs.image }}
+          image: ${{ steps.set-image.outputs.image }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
